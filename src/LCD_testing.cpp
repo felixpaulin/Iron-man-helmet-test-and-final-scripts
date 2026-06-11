@@ -24,7 +24,7 @@ void setup() {
   lcd.print("Hello, World!");
 
   lcd.setCursor(0, 1);
-  lcd.print("LCD works");
+  lcd.print("dis cool");
 
   lcd.setCursor(15, 1);
   lcd.print(spinnerChars[spinnerIndex]);
