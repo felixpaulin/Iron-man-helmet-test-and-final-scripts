@@ -9,6 +9,7 @@
             "name": "PlatformIO",
             "includePath": [
                 "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/src",
+                "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/.pio/libdeps/esp32dev/ESP32Servo/src",
                 "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/.pio/libdeps/esp32dev/LiquidCrystal_I2C",
                 "C:/Users/felix/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "C:/Users/felix/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
@@ -245,6 +246,7 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
                     "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/src",
+                    "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/.pio/libdeps/esp32dev/ESP32Servo/src",
                     "C:/Users/felix/Documents/GitHub/Iron-man-helmet-test-and-final-scripts/.pio/libdeps/esp32dev/LiquidCrystal_I2C",
                     "C:/Users/felix/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "C:/Users/felix/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
