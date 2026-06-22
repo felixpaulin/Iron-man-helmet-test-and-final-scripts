@@ -2,195 +2,158 @@
 
 // ----------------------
 // CHANGE THESE PINS FIRST
-// These are the only pins you should edit for your wiring.
-// Button pins must be connected to INPUT_PULLUP buttons.
-// Servo pins must be connected to the servo signal wires.
 // ----------------------
-const int Integral_open_button = 12;   // CHANGE: button pin for the 2-servo sequence
-const int Section_open_button = 13;   // CHANGE: button pin for the 6-servo sequence
+const int INTEGRAL_BUTTON_PIN = 12;    // CHANGE: button for the top pair sequence
+const int SECTIONAL_BUTTON_PIN = 13;   // CHANGE: button for the full sectional sequence
 
-const int SERVO_1_PIN = 18;          // CHANGE: signal pin for servo 1
-const int SERVO_2_PIN = 19;          // CHANGE: signal pin for servo 2
-const int SERVO_3_PIN = 21;          // CHANGE: signal pin for servo 3
-const int SERVO_4_PIN = 22;          // CHANGE: signal pin for servo 4
-const int SERVO_5_PIN = 23;          // CHANGE: signal pin for servo 5
-const int SERVO_6_PIN = 25;          // CHANGE: signal pin for servo 6
+const int TOP_LEFT_PIN = 18;           // CHANGE: pin for top left servo
+const int TOP_RIGHT_PIN = 19;          // CHANGE: pin for top right servo
+const int CHEEK_LEFT_PIN = 21;         // CHANGE: pin for left cheek servo
+const int CHEEK_RIGHT_PIN = 22;        // CHANGE: pin for right cheek servo
+const int MIDDLE_TOP_PIN = 23;         // CHANGE: pin for middle top servo
+const int BOTTOM_PIN = 25;             // CHANGE: pin for bottom servo
 
 // ----------------------
-// Servo objects
+// SERVO OBJECTS (using your helmet names)
 // ----------------------
-Servo servo1;
-Servo servo2;
-Servo servo3;
-Servo servo4;
-Servo servo5;
-Servo servo6;
-
-// ----------------------
-// CHANGE THESE ANGLES AND TIMING
-// OPEN_ANGLE = how far the servos move when opening
-// CLOSED_ANGLE = resting position (usually 0)
-// STEP_DELAY_MS = time between each tiny movement step
-// ----------------------
-const int STEP_DELAY_MS = 15;        // CHANGE: slower = smoother, faster = quicker
-const int OPEN_ANGLE = 40;           // CHANGE: opening angle for the first pair / general open position
-const int SECOND_OPEN_ANGLE = 80;    // CHANGE: optional extra open position if you want a bigger move
-const int CLOSED_ANGLE = 0;          // CHANGE: resting angle (usually leave at 0)
-
-// These names are just labels for the sequence order.
-// You can ignore them unless you want clearer code later.
-const int SERVO_PAIR_A_FIRST = 1;
-const int SERVO_PAIR_A_SECOND = 2;
-const int SERVO_PAIR_B_FIRST = 3;
-const int SERVO_PAIR_B_SECOND = 4;
-
-bool twoServoOpen = false;
-bool sixServoOpen = false;
-
-bool twoServoButtonLast = HIGH;
-bool sixServoButtonLast = HIGH;
-
-bool twoServoRunning = false;
-bool sixServoRunning = false;
-
-int pos1 = 0;
-int pos2 = 0;
-int pos3 = 0;
-int pos4 = 0;
-int pos5 = 0;
-int pos6 = 0;
+Servo topLeft;
+Servo topRight;
+Servo cheekLeft;
+Servo cheekRight;
+Servo middleTop;
+Servo bottomServo;
 
 // ----------------------
-// CHANGE THESE MOVEMENT RULES IF NEEDED
-// These control how each servo moves step by step.
+// CHANGE THESE ANGLES / TIMING
 // ----------------------
-void moveSingleServo(Servo &servo, int &currentPos, int targetPos) {
-  if (currentPos < targetPos) {
-    for (int i = currentPos; i <= targetPos; i++) {
+const int STEP_DELAY_MS = 15;          // CHANGE: higher = slower motion
+const int CLOSED_ANGLE = 0;            // CHANGE: closed/rest angle
+
+const int TOP_LEFT_ANGLE = 40;         // CHANGE: angle for top left servo
+const int TOP_RIGHT_ANGLE = 40;        // CHANGE: angle for top right servo
+const int CHEEK_LEFT_ANGLE = 40;       // CHANGE: angle for left cheek servo
+const int CHEEK_RIGHT_ANGLE = 40;      // CHANGE: angle for right cheek servo
+const int MIDDLE_TOP_ANGLE = 40;       // CHANGE: angle for middle top servo
+const int BOTTOM_ANGLE = 40;           // CHANGE: angle for bottom servo
+
+// ----------------------
+// STATE TRACKING
+// ----------------------
+bool integralIsOpen = false;
+bool sectionalIsOpen = false;
+
+bool integralButtonLast = HIGH;
+bool sectionalButtonLast = HIGH;
+
+// ----------------------
+// HELPER: move one servo slowly
+// ----------------------
+void moveServoTo(Servo &servo, int currentAngle, int targetAngle) {
+  if (currentAngle < targetAngle) {
+    for (int i = currentAngle; i <= targetAngle; i++) {
       servo.write(i);
-      currentPos = i;
       delay(STEP_DELAY_MS);
     }
-  } else if (currentPos > targetPos) {
-    for (int i = currentPos; i >= targetPos; i--) {
+  } else if (currentAngle > targetAngle) {
+    for (int i = currentAngle; i >= targetAngle; i--) {
       servo.write(i);
-      currentPos = i;
       delay(STEP_DELAY_MS);
     }
   }
 }
 
-void movePairSync(Servo &servoA, Servo &servoB, int &posA, int &posB, int targetPos) {
-  while (posA != targetPos || posB != targetPos) {
-    if (posA != targetPos) {
-      posA += (posA < targetPos) ? 1 : -1;
-      servoA.write(posA);
-    }
+// ----------------------
+// INTEGRAL OPEN / CLOSE
+// Two top servos move together
+// ----------------------
+void integralOpen() {
+  moveServoTo(topLeft, 0, TOP_LEFT_ANGLE);
+  moveServoTo(topRight, 0, TOP_RIGHT_ANGLE);
+  integralIsOpen = true;
+}
 
-    if (posB != targetPos) {
-      posB += (posB < targetPos) ? 1 : -1;
-      servoB.write(posB);
-    }
-
-    delay(STEP_DELAY_MS);
-  }
+void integralClose() {
+  moveServoTo(topLeft, TOP_LEFT_ANGLE, CLOSED_ANGLE);
+  moveServoTo(topRight, TOP_RIGHT_ANGLE, CLOSED_ANGLE);
+  integralIsOpen = false;
 }
 
 // ----------------------
-// CHANGE THIS FUNCTION IF YOU WANT A DIFFERENT 2-SERVO ORDER
-// This runs when the 2-servo button is pressed.
+// SECTIONAL OPEN / CLOSE
+// Sequence you described:
+// 1) cheek pair move together
+// 2) middle top moves
+// 3) bottom moves
+// 4) top pair move together
 // ----------------------
-void runTwoServoSequence() {
-  if (twoServoRunning) return;
-  twoServoRunning = true;
-
-  if (!twoServoOpen) {
-    // Open sequence
-    movePairSync(servo1, servo2, pos1, pos2, OPEN_ANGLE);
-  } else {
-    // Close sequence in reverse
-    movePairSync(servo1, servo2, pos1, pos2, CLOSED_ANGLE);
-  }
-
-  twoServoOpen = !twoServoOpen;
-  twoServoRunning = false;
+void sectionalOpen() {
+  moveServoTo(cheekLeft, 0, CHEEK_LEFT_ANGLE);
+  moveServoTo(cheekRight, 0, CHEEK_RIGHT_ANGLE);
+  moveServoTo(middleTop, 0, MIDDLE_TOP_ANGLE);
+  moveServoTo(bottomServo, 0, BOTTOM_ANGLE);
+  moveServoTo(topLeft, 0, TOP_LEFT_ANGLE);
+  moveServoTo(topRight, 0, TOP_RIGHT_ANGLE);
+  sectionalIsOpen = true;
 }
 
-// ----------------------
-// CHANGE THIS FUNCTION IF YOU WANT A DIFFERENT 6-SERVO ORDER
-// Current order:
-// 1) servo1 + servo2   (same pair used in the 2-servo sequence)
-// 2) servo3
-// 3) servo4
-// 4) servo5 + servo6   (same pair used in the 2-servo sequence)
-// ----------------------
-void runSixServoSequence() {
-  if (sixServoRunning) return;
-  sixServoRunning = true;
-
-  if (!sixServoOpen) {
-    // New pattern:
-    // 1) servo1 + servo2 move together
-    // 2) servo3 moves
-    // 3) servo4 moves
-    // 4) servo5 + servo6 move together
-    // NOTE: the last two servos here are the same pair as the 2-servo sequence
-    movePairSync(servo1, servo2, pos1, pos2, OPEN_ANGLE);
-    moveSingleServo(servo3, pos3, OPEN_ANGLE);
-    moveSingleServo(servo4, pos4, OPEN_ANGLE);
-    movePairSync(servo5, servo6, pos5, pos6, OPEN_ANGLE);
-  } else {
-    // Close sequence in reverse
-    movePairSync(servo5, servo6, pos5, pos6, CLOSED_ANGLE);
-    moveSingleServo(servo4, pos4, CLOSED_ANGLE);
-    moveSingleServo(servo3, pos3, CLOSED_ANGLE);
-    movePairSync(servo1, servo2, pos1, pos2, CLOSED_ANGLE);
-  }
-
-  sixServoOpen = !sixServoOpen;
-  sixServoRunning = false;
+void sectionalClose() {
+  moveServoTo(topRight, TOP_RIGHT_ANGLE, CLOSED_ANGLE);
+  moveServoTo(topLeft, TOP_LEFT_ANGLE, CLOSED_ANGLE);
+  moveServoTo(bottomServo, BOTTOM_ANGLE, CLOSED_ANGLE);
+  moveServoTo(middleTop, MIDDLE_TOP_ANGLE, CLOSED_ANGLE);
+  moveServoTo(cheekRight, CHEEK_RIGHT_ANGLE, CLOSED_ANGLE);
+  moveServoTo(cheekLeft, CHEEK_LEFT_ANGLE, CLOSED_ANGLE);
+  sectionalIsOpen = false;
 }
 
 void setup() {
-  pinMode(Integral_open_button, INPUT_PULLUP);
-  pinMode(Section_open_button, INPUT_PULLUP);
+  pinMode(INTEGRAL_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SECTIONAL_BUTTON_PIN, INPUT_PULLUP);
 
-  servo1.attach(SERVO_1_PIN);
-  servo2.attach(SERVO_2_PIN);
-  servo3.attach(SERVO_3_PIN);
-  servo4.attach(SERVO_4_PIN);
-  servo5.attach(SERVO_5_PIN);
-  servo6.attach(SERVO_6_PIN);
+  topLeft.attach(TOP_LEFT_PIN);
+  topRight.attach(TOP_RIGHT_PIN);
+  cheekLeft.attach(CHEEK_LEFT_PIN);
+  cheekRight.attach(CHEEK_RIGHT_PIN);
+  middleTop.attach(MIDDLE_TOP_PIN);
+  bottomServo.attach(BOTTOM_PIN);
 
-  // Start all servos at 0
-  servo1.write(CLOSED_ANGLE);
-  servo2.write(CLOSED_ANGLE);
-  servo3.write(CLOSED_ANGLE);
-  servo4.write(CLOSED_ANGLE);
-  servo5.write(CLOSED_ANGLE);
-  servo6.write(CLOSED_ANGLE);
+  // Start all servos at closed position
+  topLeft.write(CLOSED_ANGLE);
+  topRight.write(CLOSED_ANGLE);
+  cheekLeft.write(CLOSED_ANGLE);
+  cheekRight.write(CLOSED_ANGLE);
+  middleTop.write(CLOSED_ANGLE);
+  bottomServo.write(CLOSED_ANGLE);
   delay(500);
 }
 
 void loop() {
-  bool twoButtonState = digitalRead(Integral_open_button);
-  bool sixButtonState = digitalRead(Section_open_button);
+  bool integralButtonState = digitalRead(INTEGRAL_BUTTON_PIN);
+  bool sectionalButtonState = digitalRead(SECTIONAL_BUTTON_PIN);
 
-  // Button 1 press handling
-  if (twoButtonState == LOW && twoServoButtonLast == HIGH) {
+  // Integral button handling
+  if (integralButtonState == LOW && integralButtonLast == HIGH) {
     delay(20);
-    if (digitalRead(Integral_open_button) == LOW) {
-      runTwoServoSequence();
+    if (digitalRead(INTEGRAL_BUTTON_PIN) == LOW) {
+      if (integralIsOpen) {
+        integralClose();
+      } else {
+        integralOpen();
+      }
     }
   }
-  twoServoButtonLast = twoButtonState;
+  integralButtonLast = integralButtonState;
 
-  // Button 2 press handling
-  if (sixButtonState == LOW && sixServoButtonLast == HIGH) {
+  // Sectional button handling
+  if (sectionalButtonState == LOW && sectionalButtonLast == HIGH) {
     delay(20);
-    if (digitalRead(Section_open_button) == LOW) {
-      runSixServoSequence();
+    if (digitalRead(SECTIONAL_BUTTON_PIN) == LOW) {
+      if (sectionalIsOpen) {
+        sectionalClose();
+      } else {
+        sectionalOpen();
+      }
     }
   }
-  sixServoButtonLast = sixButtonState;
+  sectionalButtonLast = sectionalButtonState;
 }
