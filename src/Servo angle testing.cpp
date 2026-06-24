@@ -15,7 +15,7 @@ Servo bottomServo;                   // servo object for the bottom servo
 bool isOpenPosition = false;         // tracks whether the helmet is currently open
 bool lastButtonState = HIGH;         // remembers the last button state for debounce
 
-const int stepDelayMs = 5;          // delay between each incremental servo step
+const int stepDelayMs = 1;          // delay between each incremental servo step
 const int middleTopDelayMs = 300;    // delay after cheeks before moving middle top
 const int bottomDelayMs = 300;       // delay after middle top before moving bottom servo
 
@@ -26,7 +26,7 @@ const int leftCheekOpen = 117;       // open angle for left cheek servo
 const int middleTopClosed = 150;     // closed angle for middle top servo
 const int middleTopOpen = 30;        // open angle for middle top servo
 const int bottomServoClosed = 40;   // closed angle for bottom servo
-const int bottomServoOpen = 130;      // open angle for bottom servo
+const int bottomServoOpen = 135;      // open angle for bottom servo
 
 int rightCheekAngle = rightCheekClosed;  // current right cheek angle state
 int leftCheekAngle = leftCheekClosed;    // current left cheek angle state
