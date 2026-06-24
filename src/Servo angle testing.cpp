@@ -26,7 +26,7 @@ const int LEFT_CHEEK_CLOSED = 50;
 const int LEFT_CHEEK_OPEN = 117;
 const int MIDDLE_TOP_CLOSED = 150;
 const int MIDDLE_TOP_OPEN = 30;
-const int BOTTOM_SERVO_CLOSED = 40;
+const int BOTTOM_SERVO_CLOSED = 38;
 const int BOTTOM_SERVO_OPEN = 130;
 
 void moveBothServosTo(int rightAngle, int leftAngle) {
