@@ -1,7 +1,8 @@
 #include <ESP32Servo.h>
 #include <Arduino.h>
 
-const int buttonPin = 12;
+const int sectionalPin = 12;
+const int integralPin = 16;
 const int rightCheekPin = 18;
 const int leftCheekPin = 19;
 const int middleTopPin = 23;
@@ -17,7 +18,8 @@ Servo leftTop;
 Servo rightTop;
 
 bool servoAt50 = false;
-bool lastButtonState = HIGH;
+bool lastSectionalState = HIGH;
+bool lastIntegralState = HIGH;
 
 const int smoothTurnMs = 6;
 const int middleTopDelayMs = 300;
@@ -45,24 +47,9 @@ void moveBothServosTo(int rightAngle, int leftAngle) {
   rightCheek.attach(rightCheekPin);
   leftCheek.attach(leftCheekPin);
 
-  while (rightCheek.read() != rightAngle || leftCheek.read() != leftAngle) {
-    int currentRight = rightCheek.read();
-    int currentLeft = leftCheek.read();
-
-    if (currentRight < rightAngle) {
-      currentRight++;
-    } else if (currentRight > rightAngle) {
-      currentRight--;
-    }
-
-    if (currentLeft < leftAngle) {
-      currentLeft++;
-    } else if (currentLeft > leftAngle) {
-      currentLeft--;
-    }
-
-    rightCheek.write(currentRight);
-    leftCheek.write(currentLeft);
+  for (int i = 0; i <= 10; i++) {
+    rightCheek.write(rightAngle);
+    leftCheek.write(leftAngle);
     delay(smoothTurnMs);
   }
 
@@ -112,7 +99,8 @@ void moveBottomServoTo(int angle) {
 }
 
 void setup() {
-  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(sectionalPin, INPUT_PULLUP);
+  pinMode(integralPin, INPUT_PULLUP);
 
   // Start by moving once to the closed positions, then detach
   moveBothServosTo(rightCheekClosed, leftCheekClosed);
@@ -122,14 +110,8 @@ void setup() {
   delay(500);
 }
 
-void loop() {
-  bool buttonState = digitalRead(buttonPin);
-
-  if (buttonState == LOW && lastButtonState == HIGH) {
-    delay(20);
-    if (digitalRead(buttonPin) == LOW) {
-      servoAt50 = !servoAt50;
-if (servoAt50) {
+void sectionalOpen() {
+  if (servoAt50) {
     moveBothServosTo(rightCheekOpen, leftCheekOpen);
     delay(middleTopDelayMs);
     moveMiddleTopTo(middleTopOpen);
@@ -146,8 +128,35 @@ if (servoAt50) {
     delay(middleTopDelayMs);
     moveBothServosTo(rightCheekClosed, leftCheekClosed);
   }
+}
+
+void integralOpen() {
+    if (servoAt50) {
+    moveTopServosTo(rightTopOpen, leftTopOpen);
+  } else {
+    moveTopServosTo(rightTopClosed, leftTopClosed);
+  }
+}
+
+void loop() {
+  bool sectionalState = digitalRead(sectionalPin);
+  bool integralState = digitalRead(integralPin);
+
+  if (sectionalState == LOW && lastSectionalState == HIGH) {
+    delay(20);
+    if (digitalRead(sectionalPin) == LOW) {
+      servoAt50 = !servoAt50;
+      sectionalOpen();
     }
   }
 
-  lastButtonState = buttonState;
+  if (integralState == LOW && lastIntegralState == HIGH) {
+    delay(20);
+    if (digitalRead(integralPin) == LOW) {
+      integralOpen();
+    }
+  }
+
+  lastSectionalState = sectionalState;
+  lastIntegralState = integralState;
 }
