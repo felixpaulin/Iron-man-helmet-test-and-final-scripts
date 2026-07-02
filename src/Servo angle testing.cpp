@@ -1,7 +1,7 @@
 #include <ESP32Servo.h>
 #include <Arduino.h>
 
-const int sectionalPin = 12;
+const int sectionalPin = 13;
 const int integralPin = 16;
 const int rightCheekPin = 18;
 const int leftCheekPin = 19;
